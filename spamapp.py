@@ -8,8 +8,8 @@ import numpy as np
 from flask import Flask, render_template, request
 #from flask_mail import Mail, Message
 #from sklearn.feature_extraction.text import CountVectorizer
-import tensorflow as tf
-from keras.preprocessing.sequence import pad_sequences
+#import tensorflow as tf
+#from keras.preprocessing.sequence import pad_sequences
 import pickle
 #from config import mail_username, mail_password
 
@@ -27,8 +27,11 @@ sms_clf = pickle.load(open(smsfile,'rb'))
 smscv = pickle.load(open('smsvec.pkl','rb'))
 
 #ycomment file
-yclf = tf.keras.models.load_model('rnn9422.h5')
-ycv = pickle.load(open('nntok.pkl','rb'))
+#yclf = tf.keras.models.load_model('rnn9422.h5')
+#ycv = pickle.load(open('nntok.pkl','rb'))
+ycmtfile = 'ytubecmt.pkl'
+yclf = pickle.load(open(ycmtfile,'rb'))
+ycv = pickle.load(open('ycmtvec.pkl','rb'))
 
 app = Flask(__name__)
 
@@ -87,6 +90,7 @@ def predictsms():
 def ycomment():
     return render_template('youtube.html')
 
+"""
 @app.route("/predictcomment", methods=['POST'])
 def predictcomment():
     if request.method == 'POST':
@@ -102,7 +106,18 @@ def predictcomment():
         # one-hot encoded vector, revert using np.argmax
         y_prediction = np.argmax(prediction)
     return render_template('result.html', prediction = y_prediction, Ham = ham, Spam = spam)
-    
+""" 
+@app.route("/predictcomment", methods=['POST'])
+def predictcomment():
+    if request.method == 'POST':
+        message = request.form["message"]
+        data = [message]
+        test = ycv.transform(data).toarray()
+        predi = yclf.predict(test)
+        Prob = yclf.predict_proba(test) * 100
+        ham = round(Prob[0][0],2)
+        spam = round(Prob[0][1],2)
+        return render_template('result.html', prediction = predi, Ham = ham, Spam = spam)
 
 @app.route("/contact", methods=['GET','POST'])
 def contact():
